@@ -11,7 +11,7 @@ public class PriceRetriever {
     }
 
     private void sleep(int delay) {
-        try { Thread.sleep(delay * 1000);
+        try { Thread.sleep(delay * 1000L);
         } catch (InterruptedException e) {}
     }
 }
