@@ -34,16 +34,8 @@ public class PriceAggregator {
         CompletableFuture.allOf(pricesCfs.toArray(CompletableFuture[]::new)).join();
 
         return pricesCfs.stream()
-                .map(this::getPrice)
+                .map(CompletableFuture::join)
                 .min(Double::compareTo)
                 .orElse(Double.NaN);
-    }
-
-    private Double getPrice(CompletableFuture<Double> priceCf) {
-        try {
-            return priceCf.get();
-        } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException("Failed to get price from CompletableFuture: " + e);
-        }
     }
 }
