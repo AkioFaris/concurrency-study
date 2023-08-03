@@ -1,7 +1,10 @@
 ### History
 
 #### 1.3.0
-- Implement bidding in AuctionOptimistic 
+- Implement AuctionOptimistic 
+- Implement AuctionPessimistic
+- Implement AuctionStoppableOptimistic 
+- Implement AuctionStoppablePessimistic
 - Implement non-blocking notifications in Notifier
 
 #### 1.2.0
