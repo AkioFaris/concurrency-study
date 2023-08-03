@@ -1,5 +1,8 @@
 ### History
 
+#### 1.2.0
+- Add ConcurrentHashMapDeadLockTest with deadlock example
+
 #### 1.1.0
 - Add 3 module shared variables examples (initial)
 
