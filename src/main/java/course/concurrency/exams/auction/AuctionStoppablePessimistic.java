@@ -65,8 +65,10 @@ public class AuctionStoppablePessimistic implements AuctionStoppable {
 
     private void updateLatestBid(Bid bid) {
         long stamp = stampedLock.writeLock();
-        notifier.sendOutdatedMessage(latestBid);
-        latestBid = bid;
+        if (isActive) {
+            notifier.sendOutdatedMessage(latestBid);
+            latestBid = bid;
+        }
         stampedLock.unlockWrite(stamp);
     }
 
