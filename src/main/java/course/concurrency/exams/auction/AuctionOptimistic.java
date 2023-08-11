@@ -19,26 +19,22 @@ public class AuctionOptimistic implements Auction {
      * @return true if the latest newBid was updated, false otherwise
      */
     public boolean propose(Bid newBid) {
-        Bid currentBid = latestBid.get();
-        if (currentBid == null || newBid.getPrice() > currentBid.getPrice()) {
-            boolean updateSucceeded = latestBid.compareAndSet(currentBid, newBid);
+        boolean updateSucceeded = false;
+        Bid currentBid;
 
-            while (!updateSucceeded) {
-                currentBid = latestBid.get();
-                if (newBid.getPrice() <= currentBid.getPrice()) // check if the new bid still beats the current one
-                    break;
-                updateSucceeded = latestBid.compareAndSet(currentBid, newBid);
-            }
+        do {
+            currentBid = latestBid.get();
+        } while ((currentBid == null || newBid.getPrice() > currentBid.getPrice())
+                && !(updateSucceeded = latestBid.compareAndSet(currentBid, newBid)));
 
-            if (updateSucceeded) {
-                notifier.sendOutdatedMessage(currentBid);
-                return true;
-            }
+        if (updateSucceeded) {
+            notifier.sendOutdatedMessage(currentBid);
         }
-        return false;
+
+        return updateSucceeded;
     }
 
-    public Bid getLatestBid(){
+    public Bid getLatestBid() {
         return latestBid.get();
     }
 
