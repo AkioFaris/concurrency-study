@@ -11,7 +11,7 @@ public class AuctionPessimistic implements Auction {
     }
 
     private final ReentrantLock lock = new ReentrantLock();
-    private volatile Bid latestBid;
+    private volatile Bid latestBid = INITIAL_BID;
 
     /**
      * Checks whether the new bid is the highest and updates the latest bid in this case
@@ -40,6 +40,6 @@ public class AuctionPessimistic implements Auction {
     }
 
     private boolean shouldBidBeUpdated(Bid bid) {
-        return latestBid == null || bid.getPrice() > latestBid.getPrice();
+        return bid.getPrice() > latestBid.getPrice();
     }
 }

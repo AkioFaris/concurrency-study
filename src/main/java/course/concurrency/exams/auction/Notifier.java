@@ -8,7 +8,7 @@ public class Notifier {
     private final ExecutorService executorService = Executors.newFixedThreadPool(100);
 
     public void sendOutdatedMessage(Bid bid) {
-        if (bid == null) {
+        if (bid.equals(Auction.INITIAL_BID)) {
             return;
         }
         executorService.submit(this::imitateSending);
