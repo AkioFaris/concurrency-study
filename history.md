@@ -1,5 +1,8 @@
 ### History
 
+#### 1.3.0
+- Add RestaurantService's addToStat, printStat methods implementations
+
 #### 1.2.0
 - Add ConcurrentHashMapDeadLockTest with deadlock example
 
