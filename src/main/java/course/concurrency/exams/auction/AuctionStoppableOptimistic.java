@@ -26,7 +26,7 @@ public class AuctionStoppableOptimistic implements AuctionStoppable {
 
         do {
             currentBid = latestBid.getReference();
-            if (!latestBid.isMarked() || currentBid.getPrice() > newBid.getPrice())
+            if (!latestBid.isMarked() || currentBid.getPrice() >= newBid.getPrice())
                 return false;
         } while (!latestBid.compareAndSet(currentBid, newBid, true, true));
 
