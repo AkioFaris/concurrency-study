@@ -1,6 +1,6 @@
 package course.concurrency.exams.auction;
 
-import java.util.concurrent.locks.StampedLock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class AuctionStoppablePessimistic implements AuctionStoppable {
 
@@ -9,8 +9,8 @@ public class AuctionStoppablePessimistic implements AuctionStoppable {
     public AuctionStoppablePessimistic(Notifier notifier) {
         this.notifier = notifier;
     }
-    private final StampedLock stampedLock = new StampedLock();
-    private volatile Bid latestBid;
+    private final ReentrantLock lock = new ReentrantLock();
+    private volatile Bid latestBid = INITIAL_BID;
     private volatile boolean isActive = true;
 
     /**
@@ -20,36 +20,30 @@ public class AuctionStoppablePessimistic implements AuctionStoppable {
      * @return true if the latest bid was updated, false otherwise
      */
     public boolean propose(Bid bid) {
-        long stamp = stampedLock.tryOptimisticRead();
-
-        if (latestBid == null || doesBeatTheLatestBid(bid)) {
-            // check if the latest bid was updated by another thread or if the auction is stopped
-            if (stampedLock.validate(stamp)) {
-                updateLatestBid(bid);
-                return true;
-            } else {
-                return updateLatestBidIfNeeded(bid);
+        if (shouldBidBeUpdated(bid)) {
+            try {
+                lock.lock();
+                if (shouldBidBeUpdated(bid)) {
+                    notifier.sendOutdatedMessage(latestBid);
+                    latestBid = bid;
+                    return true;
+                }
+            } finally {
+                lock.unlock();
             }
         }
         return false;
     }
 
     public Bid getLatestBid() {
-        long stamp = stampedLock.tryOptimisticRead();
-        Bid lastAcceptedBid = latestBid;
-        if (!stampedLock.validate(stamp)) {
-            stamp = stampedLock.readLock();
-            lastAcceptedBid = latestBid;
-            stampedLock.unlockRead(stamp);
-        }
-        return lastAcceptedBid;
+        return latestBid;
     }
 
     @Override
     public Bid stopAuction() {
-        long stamp = stampedLock.writeLock();
+        lock.lock();
         isActive = false;
-        stampedLock.unlockWrite(stamp);
+        lock.unlock();
 
         return latestBid;
     }
@@ -59,28 +53,8 @@ public class AuctionStoppablePessimistic implements AuctionStoppable {
      * @param bid a new bid
      * @return true is the auction is active and the new bid is higher than the latest one
      */
-    private boolean doesBeatTheLatestBid(Bid bid) {
+    private boolean shouldBidBeUpdated(Bid bid) {
         return isActive && bid.getPrice() > latestBid.getPrice();
     }
 
-    private void updateLatestBid(Bid bid) {
-        long stamp = stampedLock.writeLock();
-        if (isActive) {
-            notifier.sendOutdatedMessage(latestBid);
-            latestBid = bid;
-        }
-        stampedLock.unlockWrite(stamp);
-    }
-
-    private boolean updateLatestBidIfNeeded(Bid bid) {
-        boolean isBidUpdated = false;
-        long stamp = stampedLock.writeLock();
-        if (doesBeatTheLatestBid(bid)) {
-            notifier.sendOutdatedMessage(latestBid);
-            latestBid = bid;
-            isBidUpdated = true;
-        }
-        stampedLock.unlockWrite(stamp);
-        return isBidUpdated;
-    }
 }
