@@ -23,7 +23,7 @@ public class RestaurantService {
     }
 
     public void addToStat(String restaurantName) {
-        stat.compute(restaurantName, (name, count) -> count != null ? count + 1 : 1);
+        stat.merge(restaurantName, 1L, (prevCount, defaultValue) -> prevCount + 1);
     }
 
     public Set<String> printStat() {
