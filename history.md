@@ -1,5 +1,8 @@
 ### History
 
+#### 1.4.0
+- Add RestaurantService's addToStat, printStat methods implementations
+
 #### 1.3.0
 - Implement AuctionOptimistic 
 - Implement AuctionPessimistic
