@@ -22,7 +22,7 @@ public class Order {
         this.status = NEW;
     }
 
-    public Order(Order otherOrder, PaymentInfo paymentInfo) {
+    private Order(Order otherOrder, PaymentInfo paymentInfo) {
         this.id = otherOrder.getId();
         this.items = List.copyOf(otherOrder.getItems());
         this.paymentInfo = paymentInfo;
@@ -30,7 +30,7 @@ public class Order {
         this.status = IN_PROGRESS;
     }
 
-    public Order(Order otherOrder, boolean packed) {
+    private Order(Order otherOrder, boolean packed) {
         this.id = otherOrder.getId();
         this.items = List.copyOf(otherOrder.getItems());
         this.paymentInfo = otherOrder.getPaymentInfo();
@@ -38,12 +38,24 @@ public class Order {
         this.status = IN_PROGRESS;
     }
 
-    public Order(Order otherOrder, Status status) {
+    private Order(Order otherOrder, Status status) {
         this.id = otherOrder.getId();
         this.items = List.copyOf(otherOrder.getItems());
         this.paymentInfo = otherOrder.getPaymentInfo();
         this.isPacked = otherOrder.isPacked();
         this.status = status;
+    }
+
+    public static Order packed(Order order) {
+        return new Order(order, true);
+    }
+
+    public static Order payed(Order order, PaymentInfo paymentInfo) {
+        return new Order(order, paymentInfo);
+    }
+
+    public static Order delivered(Order order) {
+        return new Order(order, DELIVERED);
     }
 
     public boolean isReadyForDelivery() {

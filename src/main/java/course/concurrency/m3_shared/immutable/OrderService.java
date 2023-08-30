@@ -22,7 +22,7 @@ public class OrderService {
     }
 
     public void updatePaymentInfo(long orderId, PaymentInfo paymentInfo) {
-        Order updatedOrder = updateOrder(orderId, order -> new Order(order, paymentInfo));
+        Order updatedOrder = updateOrder(orderId, order -> Order.payed(order, paymentInfo));
 
         if (updatedOrder.isReadyForDelivery()) {
             deliver(updatedOrder);
@@ -30,7 +30,7 @@ public class OrderService {
     }
 
     public void setPacked(long orderId) {
-        Order updatedOrder = updateOrder(orderId, order -> new Order(order, true));
+        Order updatedOrder = updateOrder(orderId, Order::packed);
 
         if (updatedOrder.isReadyForDelivery()) {
             deliver(updatedOrder);
@@ -48,8 +48,7 @@ public class OrderService {
     }
 
     private void deliver(Order order) {
-        /* ... */
-        currentOrders.put(order.getId(), new Order(order, Order.Status.DELIVERED));
+        currentOrders.put(order.getId(), Order.delivered(order));
     }
 
     public boolean isDelivered(long orderId) {
