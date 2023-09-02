@@ -22,40 +22,27 @@ public class Order {
         this.status = NEW;
     }
 
-    private Order(Order otherOrder, PaymentInfo paymentInfo) {
-        this.id = otherOrder.getId();
-        this.items = List.copyOf(otherOrder.getItems());
+    public Order(Long id, List<Item> items, PaymentInfo paymentInfo, boolean isPacked, Status status) {
+        this.id = id;
+        this.items = List.copyOf(items);
         this.paymentInfo = paymentInfo;
-        this.isPacked = otherOrder.isPacked();
-        this.status = IN_PROGRESS;
-    }
-
-    private Order(Order otherOrder, boolean packed) {
-        this.id = otherOrder.getId();
-        this.items = List.copyOf(otherOrder.getItems());
-        this.paymentInfo = otherOrder.getPaymentInfo();
-        this.isPacked = packed;
-        this.status = IN_PROGRESS;
-    }
-
-    private Order(Order otherOrder, Status status) {
-        this.id = otherOrder.getId();
-        this.items = List.copyOf(otherOrder.getItems());
-        this.paymentInfo = otherOrder.getPaymentInfo();
-        this.isPacked = otherOrder.isPacked();
+        this.isPacked = isPacked;
         this.status = status;
     }
 
     public static Order packed(Order order) {
-        return new Order(order, true);
+        return new Order(order.getId(), order.getItems(), order.getPaymentInfo(),
+                true, IN_PROGRESS);
     }
 
     public static Order payed(Order order, PaymentInfo paymentInfo) {
-        return new Order(order, paymentInfo);
+        return new Order(order.getId(), order.getItems(), paymentInfo,
+                order.isPacked, IN_PROGRESS);
     }
 
     public static Order delivered(Order order) {
-        return new Order(order, DELIVERED);
+        return new Order(order.getId(), order.getItems(), order.getPaymentInfo(),
+                order.isPacked(), DELIVERED);
     }
 
     public boolean isReadyForDelivery() {
