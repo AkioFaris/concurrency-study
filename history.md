@@ -1,5 +1,9 @@
 ### History
 
+#### 1.5.0
+- Refactor OrderService: get rid of 'synchronized' blocks
+- Make Order immutable
+
 #### 1.4.0
 - Add RestaurantService's addToStat, printStat methods implementations
 
