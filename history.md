@@ -1,5 +1,8 @@
 ### History
 
+#### 1.7.0
+- Implement getLifoExecutor, getRejectExecutor in ThreadPoolTask
+
 #### 1.6.0
 - Add 5, 6 modules files (initial)
 
