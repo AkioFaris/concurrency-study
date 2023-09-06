@@ -1,5 +1,8 @@
 ### History
 
+#### 1.6.0
+- Add 5, 6 modules files (initial)
+
 #### 1.5.0
 - Refactor OrderService: get rid of 'synchronized' blocks
 - Make Order immutable
