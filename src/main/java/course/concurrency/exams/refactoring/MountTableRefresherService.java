@@ -22,7 +22,7 @@ public class MountTableRefresherService {
      */
     private ScheduledExecutorService clientCacheCleanerScheduler;
 
-    public void serviceInit()  {
+    public void serviceInit() {
         long routerClientMaxLiveTime = 15L;
         this.cacheUpdateTimeout = 10L;
         routerClientsCache = new Others.LoadingCache<String, Others.RouterClient>();
@@ -63,7 +63,7 @@ public class MountTableRefresherService {
     /**
      * Refresh mount table cache of this router as well as all other routers.
      */
-    public void refresh()  {
+    public void refresh() {
 
         List<Others.RouterState> cachedRecords = routerStore.getCachedRecords();
         List<MountTableRefresherThread> refreshThreads = new ArrayList<>();
@@ -81,7 +81,7 @@ public class MountTableRefresherService {
                 refreshThreads.add(getLocalRefresher(adminAddress));
             } else {
                 refreshThreads.add(new MountTableRefresherThread(
-                            new Others.MountTableManager(adminAddress), adminAddress));
+                        new Others.MountTableManager(adminAddress), adminAddress));
             }
         }
         if (!refreshThreads.isEmpty()) {
@@ -148,6 +148,7 @@ public class MountTableRefresherService {
     public void setCacheUpdateTimeout(long cacheUpdateTimeout) {
         this.cacheUpdateTimeout = cacheUpdateTimeout;
     }
+
     public void setRouterClientsCache(Others.LoadingCache cache) {
         this.routerClientsCache = cache;
     }
