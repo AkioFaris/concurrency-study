@@ -1,4 +1,4 @@
-package course.concurrency.m6;
+package course.concurrency.m6.queue.blocking;
 
 public interface BlockingQueue<T> {
 

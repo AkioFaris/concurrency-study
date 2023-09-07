@@ -1,5 +1,7 @@
 package course.concurrency.m6;
 
+import course.concurrency.m6.queue.blocking.BlockingQueue;
+import course.concurrency.m6.queue.blocking.FixedSizeBlockingQueue;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -28,7 +30,7 @@ public class FixedSizeBlockingQueueTest {
     @Test
     public void shouldEnqueueFixedCount() {
         int capacity = 5;
-        BlockingQueue<Integer> queue = new FixedSizeBlockingQueue<>(capacity);
+        course.concurrency.m6.queue.blocking.BlockingQueue<Integer> queue = new FixedSizeBlockingQueue<>(capacity);
 
         List<Integer> putValues = enqueueRandomIntegers(capacity * 2, queue);
 
@@ -67,7 +69,7 @@ public class FixedSizeBlockingQueueTest {
     public void shouldEnqueueAllExpectedValuesParallel() throws InterruptedException {
         CountDownLatch countDownLatch = new CountDownLatch(1);
         int capacity = 100000;
-        BlockingQueue<Integer> queue = new FixedSizeBlockingQueue<>(capacity);
+        course.concurrency.m6.queue.blocking.BlockingQueue<Integer> queue = new FixedSizeBlockingQueue<>(capacity);
 
         ExecutorService executor = Executors.newFixedThreadPool(POOL_SIZE);
 
@@ -105,7 +107,7 @@ public class FixedSizeBlockingQueueTest {
     @ValueSource(ints = {32, 100000, 10000000})
     public void checkEnqueuedElementsCountParallel(int capacity) throws InterruptedException {
         CountDownLatch countDownLatch = new CountDownLatch(1);
-        BlockingQueue<Integer> queue = new FixedSizeBlockingQueue<>(capacity);
+        course.concurrency.m6.queue.blocking.BlockingQueue<Integer> queue = new FixedSizeBlockingQueue<>(capacity);
 
         ExecutorService executor = Executors.newFixedThreadPool(POOL_SIZE);
 
@@ -143,7 +145,7 @@ public class FixedSizeBlockingQueueTest {
     public void checkNotTooMuchElementsEnqueuedParallel() throws InterruptedException {
         CountDownLatch countDownLatch = new CountDownLatch(1);
         int capacity = 10000;
-        BlockingQueue<Integer> queue = new FixedSizeBlockingQueue<>(capacity);
+        course.concurrency.m6.queue.blocking.BlockingQueue<Integer> queue = new FixedSizeBlockingQueue<>(capacity);
 
         ExecutorService executor = Executors.newFixedThreadPool(POOL_SIZE);
 
@@ -181,7 +183,7 @@ public class FixedSizeBlockingQueueTest {
      * Utility methods
      */
 
-    private List<Integer> enqueueRandomIntegers(int count, BlockingQueue<Integer> queue) {
+    private List<Integer> enqueueRandomIntegers(int count, course.concurrency.m6.queue.blocking.BlockingQueue<Integer> queue) {
         List<Integer> putValues = new ArrayList<>();
         threadLocalRandom.ints(count).forEach(i -> {
             queue.enqueue(i);
@@ -190,7 +192,7 @@ public class FixedSizeBlockingQueueTest {
         return putValues;
     }
 
-    private void enqueueSameIntegers(int count, Integer value, BlockingQueue<Integer> queue) {
+    private void enqueueSameIntegers(int count, Integer value, course.concurrency.m6.queue.blocking.BlockingQueue<Integer> queue) {
         threadLocalRandom.ints(count).forEach(i -> queue.enqueue(value));
     }
 

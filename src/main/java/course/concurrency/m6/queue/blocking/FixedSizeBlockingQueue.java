@@ -1,4 +1,4 @@
-package course.concurrency.m6;
+package course.concurrency.m6.queue.blocking;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -14,7 +14,7 @@ public class FixedSizeBlockingQueue<T> implements BlockingQueue<T> {
     private final long capacity;
     private volatile long size = 0;
 
-    FixedSizeBlockingQueue(long capacity) {
+    public FixedSizeBlockingQueue(long capacity) {
         this.capacity = capacity;
     }
 
