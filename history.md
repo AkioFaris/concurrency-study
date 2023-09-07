@@ -1,5 +1,8 @@
 ### History
 
+#### 1.8.0
+- Implement FixedSizeBlockingQueue, FixedSizeBlockingQueueTest
+
 #### 1.7.0
 - Implement getLifoExecutor, getRejectExecutor in ThreadPoolTask
 
