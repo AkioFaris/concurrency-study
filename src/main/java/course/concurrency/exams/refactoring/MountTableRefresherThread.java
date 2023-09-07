@@ -1,15 +1,12 @@
 package course.concurrency.exams.refactoring;
 
-import static course.concurrency.exams.refactoring.Others.*;
-
-import java.util.concurrent.CountDownLatch;
+import static course.concurrency.exams.refactoring.Others.MountTableManager;
 
 public class MountTableRefresherThread extends Thread {
 
     private boolean success;
     /** Admin server on which refreshed to be invoked. */
     private String adminAddress;
-    private CountDownLatch countDownLatch;
     private MountTableManager manager;
 
     public MountTableRefresherThread(MountTableManager manager,
@@ -34,11 +31,7 @@ public class MountTableRefresherThread extends Thread {
      */
     @Override
     public void run() {
-        try {
-            success = manager.refresh();
-        } finally {
-            countDownLatch.countDown();
-        }
+        success = manager.refresh();
     }
 
     /**
@@ -46,10 +39,6 @@ public class MountTableRefresherThread extends Thread {
      */
     public boolean isSuccess() {
         return success;
-    }
-
-    public void setCountDownLatch(CountDownLatch countDownLatch) {
-        this.countDownLatch = countDownLatch;
     }
 
     @Override

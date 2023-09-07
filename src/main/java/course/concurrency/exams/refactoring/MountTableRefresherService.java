@@ -25,7 +25,7 @@ public class MountTableRefresherService {
     public void serviceInit() {
         long routerClientMaxLiveTime = 15L;
         this.cacheUpdateTimeout = 10L;
-        routerClientsCache = new Others.LoadingCache<String, Others.RouterClient>();
+        routerClientsCache = new Others.LoadingCache<>();
         routerStore.getCachedRecords().stream().map(Others.RouterState::getAdminAddress)
                 .forEach(addr -> routerClientsCache.add(addr, new Others.RouterClient()));
 
@@ -39,14 +39,11 @@ public class MountTableRefresherService {
     }
 
     private void initClientCacheCleaner(long routerClientMaxLiveTime) {
-        ThreadFactory tf = new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread();
-                t.setName("MountTableRefresh_ClientsCacheCleaner");
-                t.setDaemon(true);
-                return t;
-            }
+        ThreadFactory tf = r -> {
+            Thread t = new Thread();
+            t.setName("MountTableRefresh_ClientsCacheCleaner");
+            t.setDaemon(true);
+            return t;
         };
 
         clientCacheCleanerScheduler =
@@ -64,7 +61,6 @@ public class MountTableRefresherService {
      * Refresh mount table cache of this router as well as all other routers.
      */
     public void refresh() {
-
         List<Others.RouterState> cachedRecords = routerStore.getCachedRecords();
         List<MountTableRefresherThread> refreshThreads = new ArrayList<>();
         for (Others.RouterState routerState : cachedRecords) {
@@ -98,25 +94,22 @@ public class MountTableRefresherService {
     }
 
     private void invokeRefresh(List<MountTableRefresherThread> refreshThreads) {
-        CountDownLatch countDownLatch = new CountDownLatch(refreshThreads.size());
         // start all the threads
-        for (MountTableRefresherThread refThread : refreshThreads) {
-            refThread.setCountDownLatch(countDownLatch);
-            refThread.start();
-        }
-        try {
-            /*
-             * Wait for all the thread to complete, await method returns false if
-             * refresh is not finished within specified time
-             */
-            boolean allReqCompleted =
-                    countDownLatch.await(cacheUpdateTimeout, TimeUnit.MILLISECONDS);
-            if (!allReqCompleted) {
-                log("Not all router admins updated their cache");
-            }
-        } catch (InterruptedException e) {
-            log("Mount table cache refresher was interrupted.");
-        }
+        CompletableFuture<?>[] completableFutures = refreshThreads.stream()
+                .map(refThread -> CompletableFuture.runAsync(refThread)
+                        .orTimeout(cacheUpdateTimeout, TimeUnit.MILLISECONDS))
+                .toArray(CompletableFuture[]::new);
+
+        // Wait for all the threads to complete within the specified timeout
+        CompletableFuture.allOf(completableFutures)
+                .handle((r, e) -> {
+                    if (e != null && e.getCause() instanceof TimeoutException) {
+                        log("Not all router admins updated their cache");
+                    }
+                    return null;
+                })
+                .join();
+
         logResult(refreshThreads);
     }
 
