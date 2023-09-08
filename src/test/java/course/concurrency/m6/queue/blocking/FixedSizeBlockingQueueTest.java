@@ -3,6 +3,9 @@ package course.concurrency.m6.queue.blocking;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,6 +16,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -116,18 +120,27 @@ public class FixedSizeBlockingQueueTest {
         Assertions.assertEquals(Thread.State.TERMINATED, thread1.getState());
     }
 
-    @Test
-    public void checkEnqueueDequeueInParallel() throws InterruptedException {
+    public static Stream<Arguments> loadTestDataProvider() {
+        return Stream.of(
+                Arguments.of(POOL_SIZE, 1000, 5),
+                Arguments.of(POOL_SIZE * 2, 100000, 5),
+                Arguments.of(POOL_SIZE * 3, 1000000, 20),
+                Arguments.of(POOL_SIZE * 4, 10000000, 240),
+                Arguments.of(POOL_SIZE, 100000000, 600)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("loadTestDataProvider")
+    public void checkEnqueueDequeueInParallel(int threads, int capacity, int timeoutSec) throws InterruptedException {
         CountDownLatch countDownLatch = new CountDownLatch(1);
-        int capacity = 1000;
-        BlockingQueue<Integer> queue = new FixedSizeBlockingQueue<>(capacity);
+        FixedSizeBlockingQueue<Integer> queue = new FixedSizeBlockingQueue<>(capacity);
 
         ExecutorService executor = Executors.newFixedThreadPool(POOL_SIZE);
 
-        for (int i = 0; i < 2; ++i) {
+        for (int i = 0; i < threads / 2; ++i) {
             executor.submit(() -> {
                 awaitForCountDown(countDownLatch);
-
                 enqueueRandomIntegers(capacity, queue);
                 dequeueValues(capacity, queue);
             });
@@ -140,8 +153,9 @@ public class FixedSizeBlockingQueueTest {
         countDownLatch.countDown();
 
         executor.shutdown();
-        assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS),
-                "Not terminated during the expected time");
+        assertTrue(executor.awaitTermination(timeoutSec, TimeUnit.SECONDS),
+                "Not terminated during " + timeoutSec + " seconds");
+        Assertions.assertEquals(queue.size(), 0, NOT_EMPTY_MSG);
     }
 
     @Test
