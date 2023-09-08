@@ -103,7 +103,7 @@ public class MountTableRefresherService {
         CompletableFuture<?>[] completableFutures = refreshers.stream()
                 .map(refresher -> CompletableFuture.supplyAsync(refresher::refresh)
                         .orTimeout(cacheUpdateTimeout, TimeUnit.MILLISECONDS)
-                        .whenCompleteAsync((res, ex) -> updateRefreshFailedAddresses(refresher, failedAddresses, res)))
+                        .whenComplete((res, ex) -> updateRefreshFailedAddresses(refresher, failedAddresses, res)))
                 .toArray(CompletableFuture<?>[]::new);
 
         // Wait for all the threads to complete within the cache update timeout
