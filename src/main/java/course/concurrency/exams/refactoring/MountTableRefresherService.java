@@ -3,7 +3,7 @@ package course.concurrency.exams.refactoring;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 
 public class MountTableRefresherService {
@@ -95,37 +95,41 @@ public class MountTableRefresherService {
     }
 
     private void invokeRefresh(List<MountTableRefresher> refreshers) {
-        AtomicInteger successCount = new AtomicInteger();
         // start all the threads
-        CompletableFuture<?>[] completableFutures = refreshers.stream()
-                .map(r -> CompletableFuture.supplyAsync(r::refresh)
+        List<CompletableFuture<Boolean>> completableFutures = refreshers.stream()
+                .map(refresher -> CompletableFuture.supplyAsync(refresher::refresh)
                         .orTimeout(cacheUpdateTimeout, TimeUnit.MILLISECONDS)
-                        .whenCompleteAsync((res, ex) -> processRefreshResult(res, successCount, r)))
-                .toArray(CompletableFuture<?>[]::new);
+                        .whenCompleteAsync((res, ex) -> processSingleRefreshResult(refresher, res)))
+                .collect(Collectors.toList());
 
         // Wait for all the threads to complete within the cache update timeout
-        CompletableFuture.allOf(completableFutures)
-                .handle((res, ex) -> handleExceptionsDuringRefresh(ex))
-                .join();
-
-        int failureCount = refreshers.size() - successCount.get();
-        log(String.format("Mount table entries cache refresh successCount=%d,failureCount=%d",
-                successCount.get(), failureCount));
-    }
-
-    private Object handleExceptionsDuringRefresh(Throwable ex) {
-        if (ex != null && ex.getCause() instanceof TimeoutException) {
+        try {
+            CompletableFuture.allOf(completableFutures.toArray(CompletableFuture<?>[]::new)).get();
+        } catch (InterruptedException e) {
             log("Not all router admins updated their cache");
+        } catch (ExecutionException ex) {
+            if (ex.getCause() instanceof TimeoutException) {
+                log("Not all router admins updated their cache");
+            }
         }
-        return null;
+
+        logResult(completableFutures, refreshers.size());
     }
 
-    private void processRefreshResult(Boolean res, AtomicInteger successCount, MountTableRefresher r) {
-        if (Boolean.TRUE.equals(res)) {
-            successCount.incrementAndGet();
-        } else {
+    private void logResult(List<CompletableFuture<Boolean>> completableFutures, long allTasksCount) {
+        long successCount = completableFutures.stream()
+                .map(cf -> cf.exceptionally(e -> false).join())
+                .filter(result -> result.equals(Boolean.TRUE))
+                .count();
+        long failureCount = allTasksCount - successCount;
+        log(String.format("Mount table entries cache refresh successCount=%d,failureCount=%d",
+                successCount, failureCount));
+    }
+
+    private void processSingleRefreshResult(MountTableRefresher refresher, Boolean result) {
+        if (!Boolean.TRUE.equals(result)) {
             // remove RouterClient from cache so that new client is created
-            removeFromCache(r.getAdminAddress());
+            removeFromCache(refresher.getAdminAddress());
         }
     }
 

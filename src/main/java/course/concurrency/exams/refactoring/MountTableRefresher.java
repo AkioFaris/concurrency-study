@@ -4,7 +4,9 @@ import static course.concurrency.exams.refactoring.Others.MountTableManager;
 
 public class MountTableRefresher {
 
-    /** Admin server on which refreshed to be invoked. */
+    /**
+     * Admin server on which refreshed to be invoked.
+     */
     private final String adminAddress;
     private final MountTableManager manager;
 
@@ -26,7 +28,10 @@ public class MountTableRefresher {
      * update cache on R2 and R3.
      */
     public boolean refresh() {
-        return manager.refresh();
+        try {
+            return manager.refresh();
+        } catch (Exception ignored) {}
+        return false;
     }
 
     public String getAdminAddress() {
