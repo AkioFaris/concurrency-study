@@ -3,7 +3,7 @@ package course.concurrency.exams.refactoring;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 
 public class MountTableRefresherService {
@@ -95,12 +95,15 @@ public class MountTableRefresherService {
     }
 
     private void invokeRefresh(List<MountTableRefresher> refreshers) {
-        AtomicInteger successCount = new AtomicInteger();
+        ConcurrentSkipListSet<String> failedAddresses = refreshers.stream()
+                .map(MountTableRefresher::getAdminAddress)
+                .collect(Collectors.toCollection(ConcurrentSkipListSet::new));
+
         // start all the threads
         CompletableFuture<?>[] completableFutures = refreshers.stream()
                 .map(refresher -> CompletableFuture.supplyAsync(refresher::refresh)
                         .orTimeout(cacheUpdateTimeout, TimeUnit.MILLISECONDS)
-                        .whenCompleteAsync((res, ex) -> processSingleRefreshResult(refresher, successCount, res)))
+                        .whenCompleteAsync((res, ex) -> updateRefreshFailedAddresses(refresher, failedAddresses, res)))
                 .toArray(CompletableFuture<?>[]::new);
 
         // Wait for all the threads to complete within the cache update timeout
@@ -113,22 +116,22 @@ public class MountTableRefresherService {
                 log("Not all router admins updated their cache");
             }
         }
+        // for each failed refresh remove RouterClient from cache so that new client is created
+        failedAddresses.forEach(this::removeFromCache);
 
-        logResult(refreshers.size(), successCount.get());
+        logResult(refreshers.size(), failedAddresses.size());
     }
 
-    private void logResult(int allTasksCount, int successCount) {
-        int failureCount = allTasksCount - successCount;
+    private void logResult(int allTasksCount, int failureCount) {
+        int successCount = allTasksCount - failureCount;
         log(String.format("Mount table entries cache refresh successCount=%d,failureCount=%d",
                 successCount, failureCount));
     }
 
-    private void processSingleRefreshResult(MountTableRefresher refresher, AtomicInteger successCount, Boolean result) {
+    private void updateRefreshFailedAddresses(MountTableRefresher refresher, ConcurrentSkipListSet<String> failedAddresses,
+                                              Boolean result) {
         if (Boolean.TRUE.equals(result)) {
-            successCount.incrementAndGet();
-        } else {
-            // remove RouterClient from cache so that new client is created
-            removeFromCache(refresher.getAdminAddress());
+            failedAddresses.remove(refresher.getAdminAddress());
         }
     }
 
