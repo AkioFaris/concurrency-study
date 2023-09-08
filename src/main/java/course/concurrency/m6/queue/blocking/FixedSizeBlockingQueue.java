@@ -2,12 +2,17 @@ package course.concurrency.m6.queue.blocking;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
+@Slf4j
 public class FixedSizeBlockingQueue<T> implements BlockingQueue<T> {
 
     private final ReentrantLock lock = new ReentrantLock();
+    private final Condition isNotEmpty = lock.newCondition();
+    private final Condition isNotFull = lock.newCondition();
 
     private volatile Node<T> head;
     private volatile Node<T> tail;
@@ -33,10 +38,11 @@ public class FixedSizeBlockingQueue<T> implements BlockingQueue<T> {
     @Override
     public void enqueue(T value) {
         try {
-            lock.lock();
-            // do nothing if the queue is full
-            if (size == capacity)
-                return;
+            lock.lockInterruptibly();
+            // wait till the queue is not full
+            while (size == capacity) {
+                isNotFull.await();
+            }
 
             Node<T> newNode = new Node<>(value);
             if (tail != null) {
@@ -47,16 +53,25 @@ public class FixedSizeBlockingQueue<T> implements BlockingQueue<T> {
                 head = tail = newNode;
             }
             ++size;
-        } finally {
+            isNotEmpty.signal();
             lock.unlock();
+        } catch (InterruptedException interruptedException) {
+            log.info("{} element enqueuing was interrupted", value);
+            Thread.currentThread().interrupt();
         }
+
     }
 
     @Override
     public T dequeue() {
-        T value;
-        lock.lock();
-        if (head != null) {
+        T value = null;
+        try {
+            lock.lockInterruptibly();
+            // wait till the queue is not empty
+            while (head == null) {
+                isNotEmpty.await();
+            }
+
             value = head.getValue();
             // if it was the only element in the queue
             if (tail == head) {
@@ -68,10 +83,16 @@ public class FixedSizeBlockingQueue<T> implements BlockingQueue<T> {
                 head.setNext(null);
             }
             --size;
-        } else {
-            value = null;
+            isNotFull.signal();
+            lock.unlock();
+        } catch (InterruptedException interruptedException) {
+            log.info("Element dequeuing was interrupted");
+            Thread.currentThread().interrupt();
         }
-        lock.unlock();
         return value;
+    }
+
+    long size() {
+        return size;
     }
 }
