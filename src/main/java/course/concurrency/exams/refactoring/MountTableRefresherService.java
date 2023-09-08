@@ -3,7 +3,7 @@ package course.concurrency.exams.refactoring;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
-import java.util.stream.Collectors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 public class MountTableRefresherService {
@@ -95,39 +95,38 @@ public class MountTableRefresherService {
     }
 
     private void invokeRefresh(List<MountTableRefresher> refreshers) {
+        AtomicInteger successCount = new AtomicInteger();
         // start all the threads
-        List<CompletableFuture<Boolean>> completableFutures = refreshers.stream()
+        CompletableFuture<?>[] completableFutures = refreshers.stream()
                 .map(refresher -> CompletableFuture.supplyAsync(refresher::refresh)
                         .orTimeout(cacheUpdateTimeout, TimeUnit.MILLISECONDS)
-                        .whenCompleteAsync((res, ex) -> processSingleRefreshResult(refresher, res)))
-                .collect(Collectors.toList());
+                        .whenCompleteAsync((res, ex) -> processSingleRefreshResult(refresher, successCount, res)))
+                .toArray(CompletableFuture<?>[]::new);
 
         // Wait for all the threads to complete within the cache update timeout
         try {
-            CompletableFuture.allOf(completableFutures.toArray(CompletableFuture<?>[]::new)).get();
+            CompletableFuture.allOf(completableFutures).get();
         } catch (InterruptedException e) {
-            log("Not all router admins updated their cache");
-        } catch (ExecutionException ex) {
-            if (ex.getCause() instanceof TimeoutException) {
+            log("Mount table cache refresher was interrupted.");
+        } catch (ExecutionException e) {
+            if (e.getCause() instanceof TimeoutException) {
                 log("Not all router admins updated their cache");
             }
         }
 
-        logResult(completableFutures, refreshers.size());
+        logResult(refreshers.size(), successCount.get());
     }
 
-    private void logResult(List<CompletableFuture<Boolean>> completableFutures, long allTasksCount) {
-        long successCount = completableFutures.stream()
-                .map(cf -> cf.exceptionally(e -> false).join())
-                .filter(result -> result.equals(Boolean.TRUE))
-                .count();
-        long failureCount = allTasksCount - successCount;
+    private void logResult(int allTasksCount, int successCount) {
+        int failureCount = allTasksCount - successCount;
         log(String.format("Mount table entries cache refresh successCount=%d,failureCount=%d",
                 successCount, failureCount));
     }
 
-    private void processSingleRefreshResult(MountTableRefresher refresher, Boolean result) {
-        if (!Boolean.TRUE.equals(result)) {
+    private void processSingleRefreshResult(MountTableRefresher refresher, AtomicInteger successCount, Boolean result) {
+        if (Boolean.TRUE.equals(result)) {
+            successCount.incrementAndGet();
+        } else {
             // remove RouterClient from cache so that new client is created
             removeFromCache(refresher.getAdminAddress());
         }
