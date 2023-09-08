@@ -6,7 +6,7 @@
 
     <groupId>samples</groupId>
     <artifactId>concurrency-course</artifactId>
-    <version>1.7.0</version>
+    <version>1.8.0</version>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
@@ -21,6 +21,8 @@
         <maven.compiler.target>11</maven.compiler.target>
         <jmh.version>1.35</jmh.version>
         <junit.version>5.8.2</junit.version>
+        <assetj.version>3.24.2</assetj.version>
+        <logback.version>1.2.3</logback.version>
     </properties>
 
     <dependencies>
@@ -47,6 +49,12 @@
             <version>${junit.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>${assetj.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <version>4.2.0</version>
@@ -56,6 +64,11 @@
 <!--            <artifactId>mockito-all</artifactId>-->
 <!--            <version>1.10.19</version>-->
 <!--        </dependency>-->
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-autoconfigure</artifactId>
