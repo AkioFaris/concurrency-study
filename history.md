@@ -1,5 +1,9 @@
 ### History
 
+#### 1.8.0
+- Implement tests MountTableRefresherServiceTests
+- Refactor MountTableRefresherService.refresh()
+
 #### 1.7.0
 - Implement getLifoExecutor, getRejectExecutor in ThreadPoolTask
 
